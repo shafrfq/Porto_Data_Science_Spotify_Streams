@@ -170,6 +170,16 @@ if uploaded_file is not None:
     else:
         st.write('No numeric columns available for correlation calculation.')
 
+    # Convert 'streams' and other relevant columns to numeric
+    df['streams'] = pd.to_numeric(df['streams'], errors='coerce')
+    df['in_deezer_playlists'] = pd.to_numeric(df['in_deezer_playlists'], errors='coerce')
+    df['in_shazam_charts'] = pd.to_numeric(df['in_shazam_charts'], errors='coerce')
+
+    # Check for any NaN values after conversion
+    st.write("NaN values in 'streams':", df['streams'].isna().sum())
+    st.write("NaN values in 'in_deezer_playlists':", df['in_deezer_playlists'].isna().sum())
+    st.write("NaN values in 'in_shazam_charts':", df['in_shazam_charts'].isna().sum())
+
     # Top Tracks Data
     top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
     st.write("Top Tracks DataFrame:", top_tracks)
@@ -199,7 +209,7 @@ if uploaded_file is not None:
             st.pyplot(plt)
     
     # Assuming df is your DataFrame with a 'streams' column and 'released_year' as the release date
-    df['release_date'] = pd.to_datetime(df['released_year'])  # Convert to datetime if not already
+    df['release_date'] = pd.to_datetime(df['released_year'], errors='coerce')
     monthly_streams = df.groupby(df['release_date'].dt.to_period('M'))['streams'].sum()
 
     # Check the data before plotting

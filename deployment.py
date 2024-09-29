@@ -37,12 +37,19 @@ if uploaded_file is not None:
 
     # Outlier Detection
     st.write('### Outlier Detection with IQR')
-    q1 = df.select_dtypes(exclude=['object']).quantile(0.25)
-    q3 = df.select_dtypes(exclude=['object']).quantile(0.75)
+    # Select only numeric columns from df
+    numeric_cols = df.select_dtypes(include=[float, int])
+
+    # Calculate the IQR (Interquartile Range)
+    q1 = numeric_cols.quantile(0.25)
+    q3 = numeric_cols.quantile(0.75)
     iqr = q3 - q1
-    outlier_filter = (df < (q1 - 1.5 * iqr)) | (df > (q3 + 1.5 * iqr))
-    st.write('Jumlah outliers pada setiap kolom:')
-    st.write(outlier_filter.sum())
+
+    # Apply the outlier filter to numeric columns only
+    outlier_filter = (numeric_cols < (q1 - 1.5 * iqr)) | (numeric_cols > (q3 + 1.5 * iqr))
+
+    # Optionally, remove outliers from the dataframe
+    df_filtered = df[~outlier_filter.any(axis=1)]
 
     # Boxplot for Outliers
     st.write('### Boxplot for Outliers')

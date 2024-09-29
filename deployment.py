@@ -72,15 +72,63 @@ if uploaded_file is not None:
     st.success('Missing values handled.')
     st.dataframe(df.head())
 
-    # Feature and Target Selection for Model Training
-    st.header('Train Machine Learning Models')
-    features = df.columns.tolist()
-    X_columns = st.multiselect('Select Features (X)', features)
-    y_column = st.selectbox('Select Target (y)', features)
+    # Correlation Matrix
+    st.write('### Correlation Matrix:')
 
-    if len(X_columns) > 0 and y_column:
-        X = df[X_columns]
-        y = df[y_column]
+    # Hanya memilih kolom numerik untuk korelasi
+    numeric_cols = df.select_dtypes(include=['float64', 'int64'])
+
+    if not numeric_cols.empty:
+        correlation_matrix = numeric_cols.corr()
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+        st.pyplot(plt)
+    else:
+        st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
+
+    # Top Tracks and Artists Visualization
+    st.write('### Top Streaming Tracks and Artists:')
+    # Misalnya, kita ingin memilih beberapa lagu teratas berdasarkan metrik tertentu
+    top_tracks = df.head(10)  # Misalnya, ambil 10 lagu teratas
+
+    # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
+    if not top_tracks.select_dtypes(include=['float64', 'int64']).empty:
+        top_tracks.select_dtypes(include=['float64', 'int64']).plot(kind='bar', figsize=(10, 6))
+        plt.title('Top Tracks Bar Plot')
+        plt.ylabel('Value')  # Sesuaikan label sesuai data
+        plt.xlabel('Track Names')  # Sesuaikan label sesuai data
+        st.pyplot(plt)
+    else:
+        st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
+    
+    # Button for Pie Chart Visualization
+    if st.button('Show Pie Chart Visualizations'):
+        # Grouping data by released_day
+        delay_per_day = df.groupby('released_day')[['in_spotify_playlists', 'in_apple_playlists']].sum()
+
+        # Pie Chart Labels
+        pieChartLabels = ['In Spotify Playlists', 'In Apple Playlists']
+
+        # Colors palette
+        myColors = sns.color_palette('pastel')
+
+        # Pie Chart per day visualization
+        for i in range(1, 8):
+            b = delay_per_day.iloc[i-1, :]  # Data for that day
+            plt.figure(figsize=(6, 6))
+            plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
+            plt.title('Released Day ' + str(i))
+            st.pyplot(plt)
+            
+        # Feature and Target Selection for Model Training
+        st.header('Train Machine Learning Models')
+        features = df.columns.tolist()
+        X_columns = st.multiselect('Select Features (X)', features)
+        y_column = st.selectbox('Select Target (y)', features)
+
+        if len(X_columns) > 0 and y_column:
+            X = df[X_columns]
+            y = df[y_column]
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -135,52 +183,4 @@ if uploaded_file is not None:
             plt.title('Actual vs Predicted')
             plt.xlabel('Actual')
             plt.ylabel('Predicted')
-            st.pyplot(plt)
-
-    # Correlation Matrix
-    st.write('### Correlation Matrix:')
-
-    # Hanya memilih kolom numerik untuk korelasi
-    numeric_cols = df.select_dtypes(include=['float64', 'int64'])
-
-    if not numeric_cols.empty:
-        correlation_matrix = numeric_cols.corr()
-        plt.figure(figsize=(10, 6))
-        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
-        st.pyplot(plt)
-    else:
-        st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
-
-    # Top Tracks and Artists Visualization
-    st.write('### Top Streaming Tracks and Artists:')
-    # Misalnya, kita ingin memilih beberapa lagu teratas berdasarkan metrik tertentu
-    top_tracks = df.head(10)  # Misalnya, ambil 10 lagu teratas
-
-    # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
-    if not top_tracks.select_dtypes(include=['float64', 'int64']).empty:
-        top_tracks.select_dtypes(include=['float64', 'int64']).plot(kind='bar', figsize=(10, 6))
-        plt.title('Top Tracks Bar Plot')
-        plt.ylabel('Value')  # Sesuaikan label sesuai data
-        plt.xlabel('Track Names')  # Sesuaikan label sesuai data
-        st.pyplot(plt)
-    else:
-        st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
-    
-    # Button for Pie Chart Visualization
-    if st.button('Show Pie Chart Visualizations'):
-        # Grouping data by released_day
-        delay_per_day = df.groupby('released_day')[['in_spotify_playlists', 'in_apple_playlists']].sum()
-
-        # Pie Chart Labels
-        pieChartLabels = ['In Spotify Playlists', 'In Apple Playlists']
-
-        # Colors palette
-        myColors = sns.color_palette('pastel')
-
-        # Pie Chart per day visualization
-        for i in range(1, 8):
-            b = delay_per_day.iloc[i-1, :]  # Data for that day
-            plt.figure(figsize=(6, 6))
-            plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
-            plt.title('Released Day ' + str(i))
             st.pyplot(plt)

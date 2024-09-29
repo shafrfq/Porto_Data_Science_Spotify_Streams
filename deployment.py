@@ -63,6 +63,82 @@ if uploaded_file is not None:
         st.success('Missing values handled.')
         st.dataframe(df.head())
 
+    # Convert 'streams' and other relevant columns to numeric
+    df['streams'] = pd.to_numeric(df['streams'], errors='coerce')
+    df['in_deezer_playlists'] = pd.to_numeric(df['in_deezer_playlists'], errors='coerce')
+    df['in_shazam_charts'] = pd.to_numeric(df['in_shazam_charts'], errors='coerce')
+
+    # Check for any NaN values after conversion
+    st.write("NaN values in 'streams':", df['streams'].isna().sum())
+    st.write("NaN values in 'in_deezer_playlists':", df['in_deezer_playlists'].isna().sum())
+    st.write("NaN values in 'in_shazam_charts':", df['in_shazam_charts'].isna().sum())
+
+    st.header('### Data Construct') ## Mengkontruksi Data
+    # Assuming df is your DataFrame
+    st.title("Data Imputation Example")
+    # Display the initial DataFrame
+    st.write("Initial DataFrame:", df.head())
+
+    ##### Streams #####
+    st.subheader("Imputation for 'streams'")
+
+    # Step 1: Randomly set some rows in the 'streams' column to None
+    jumlah_hapus = 1
+    indeks_hapus = df.sample(n=jumlah_hapus).index
+    df.loc[indeks_hapus, 'streams'] = None
+
+    # Step 2: Calculate the percentage of missing data
+    missing_percentage_streams = (df['streams'].isnull().sum() / df.shape[0]) * 100
+    st.write(f"Percentage of missing data in 'streams': {missing_percentage_streams:.2f}%")
+
+    # Step 3: Impute missing data with the mean
+    mean_streams = df['streams'].mean()
+    df['streams'].fillna(mean_streams, inplace=True)
+
+    # Display the imputed DataFrame
+    st.write("DataFrame after imputing missing values in 'streams':", df.head())
+
+    ##### in_deezer_playlists #####
+    st.subheader("Imputation for 'in_deezer_playlists'")
+
+    # Step 1: Randomly set some rows in 'in_deezer_playlists' to None
+    jumlah_hapus = 79
+    indeks_hapus = df.sample(n=jumlah_hapus).index
+    df.loc[indeks_hapus, 'in_deezer_playlists'] = None
+
+    # Step 2: Calculate the percentage of missing data
+    missing_percentage_deezer = (df['in_deezer_playlists'].isnull().sum() / df.shape[0]) * 100
+    st.write(f"Percentage of missing data in 'in_deezer_playlists': {missing_percentage_deezer:.2f}%")
+
+    # Step 3: Impute missing data with the mean
+    mean_deezer = df['in_deezer_playlists'].mean()
+    df['in_deezer_playlists'].fillna(mean_deezer, inplace=True)
+
+    # Display the imputed DataFrame
+    st.write("DataFrame after imputing missing values in 'in_deezer_playlists':", df.head())
+
+    ##### in_shazam_charts #####
+    st.subheader("Imputation for 'in_shazam_charts'")
+
+    # Step 1: Randomly set some rows in 'in_shazam_charts' to None
+    jumlah_hapus = 57
+    indeks_hapus = df.sample(n=jumlah_hapus).index
+    df.loc[indeks_hapus, 'in_shazam_charts'] = None
+
+    # Step 2: Impute missing data using SimpleImputer with 'most_frequent' strategy
+    mode_imputer = SimpleImputer(strategy="most_frequent")
+    df['in_shazam_charts'] = mode_imputer.fit_transform(df[['in_shazam_charts']])
+
+    # Display the imputed DataFrame
+    st.write("DataFrame after imputing missing values in 'in_shazam_charts':", df.head())
+
+    # Final Check for missing values
+    st.subheader("Final Missing Data Check")
+    st.write(df.isna().sum())
+
+    # Summary of imputations
+    st.write("Data imputation completed for 'streams', 'in_deezer_playlists', and 'in_shazam_charts'.")
+
     # Data Scaling
     st.header('Data Scaling')
     numerical_col = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
@@ -169,16 +245,6 @@ if uploaded_file is not None:
         st.pyplot(plt)
     else:
         st.write('No numeric columns available for correlation calculation.')
-
-    # Convert 'streams' and other relevant columns to numeric
-    df['streams'] = pd.to_numeric(df['streams'], errors='coerce')
-    df['in_deezer_playlists'] = pd.to_numeric(df['in_deezer_playlists'], errors='coerce')
-    df['in_shazam_charts'] = pd.to_numeric(df['in_shazam_charts'], errors='coerce')
-
-    # Check for any NaN values after conversion
-    st.write("NaN values in 'streams':", df['streams'].isna().sum())
-    st.write("NaN values in 'in_deezer_playlists':", df['in_deezer_playlists'].isna().sum())
-    st.write("NaN values in 'in_shazam_charts':", df['in_shazam_charts'].isna().sum())
 
     # Top Tracks Data
     top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)

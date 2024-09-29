@@ -65,9 +65,12 @@ if uploaded_file is not None:
     st.write(df.isnull().sum())
 
     if st.button('Handle Missing Values'):
-        df.fillna(df.mean(), inplace=True)
-        st.success('Missing values handled.')
-        st.dataframe(df.head())
+    # Hanya menerapkan pengisian missing values pada kolom numerik
+        numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+        df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
+    
+    st.success('Missing values handled.')
+    st.dataframe(df.head())
 
     # Feature and Target Selection for Model Training
     st.header('Train Machine Learning Models')

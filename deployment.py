@@ -139,10 +139,17 @@ if uploaded_file is not None:
 
     # Correlation Matrix
     st.write('### Correlation Matrix:')
-    correlation_matrix = df.corr()
-    plt.figure(figsize=(10, 6))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
-    st.pyplot(plt)
+
+    # Hanya memilih kolom numerik untuk korelasi
+    numeric_cols = df.select_dtypes(include=['float64', 'int64'])
+
+    if not numeric_cols.empty:
+        correlation_matrix = numeric_cols.corr()
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+        st.pyplot(plt)
+    else:
+        st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
 
     # Top Tracks and Artists Visualization
     st.write('### Top Streaming Tracks and Artists:')

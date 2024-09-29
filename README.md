@@ -8,7 +8,8 @@
 ## Solution Statements
 Untuk mengetahui faktor-faktor yang mempengaruhi popularitas lagu, dilakukan langkah-langkah berikut:
 - Melakukan Exploratory Data Analysis (EDA) untuk mendapatkan wawasan informasi yang dibutuhkan. Mencakup visualisasi data fitur terhadap target dalam hal ini, fitur-fitur yang terdapat pada dataset dan jumlah streaming sebagai data target.
-- Menggunakan feature importance untuk menilai seberapa berguna fitur dalam memprediksi jumlah streaming. Memberikan wawasan tentang data dan membantu dalam pengurangan dimensi serta pemilihan fitur yang meningkatkan efisiensi model.
+- Menggunakan feature importance untuk menilai seberapa berguna fitur dalam memprediksi jumlah streaming.
+- Memberikan wawasan tentang data dan membantu dalam pengurangan dimensi serta pemilihan fitur yang meningkatkan efisiensi model.
 
 Untuk menghasilkan model machine learning yang seakurat mungkin dalam memprediksi jumlah streaming, tiga algoritma regresi dapat digunakan:
 - Linear Regression: Model statistik sederhana yang digunakan untuk memprediksi dengan menemukan garis terbaik yang memisahkan variabel independen dan dependen. Kelebihannya adalah mudah diimplementasikan, tetapi dapat overfit dan tidak cocok untuk hubungan non-linier.

@@ -151,29 +151,25 @@ if uploaded_file is not None:
     else:
         st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
 
-    # Top Tracks and Artists Visualization
-    st.write('### Top Streaming Tracks and Artists:')
+    # Mengambil data top_tracks
+    top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
 
-    # Periksa apakah kolom 'streams' dan 'track_name' ada di DataFrame
-    if 'streams' in df.columns and 'track_name' in df.columns:
-    # Hitung 10 besar track berdasarkan total streams
-        top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
+    # Debugging: Menampilkan isi top_tracks di Streamlit
+    st.write("Top Tracks DataFrame:", top_tracks)
+
+    # Memeriksa apakah top_tracks berisi data numerik
+    if not top_tracks.empty and top_tracks.apply(lambda x: pd.api.types.is_numeric_dtype(x)):
+        # Visualisasi di Streamlit
+        fig, ax = plt.subplots(figsize=(10, 6))
+        top_tracks.plot(kind='bar', ax=ax)
     
-    # Tampilkan data 10 besar track
-        st.write(top_tracks)
-    
-    # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
-        if not top_tracks.empty:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            top_tracks.plot(kind='bar', ax=ax)
-            ax.set_title('Top 10 Tracks by Streams')
-            ax.set_ylabel('Total Streams')
-            ax.set_xlabel('Track Names')
-            st.pyplot(fig)
-        else:
-            st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
+        ax.set_title('Top 10 Tracks by Streams')
+        ax.set_ylabel('Total Streams')
+        ax.set_xlabel('Track Names')
+        
+        st.pyplot(fig)
     else:
-        st.write('Kolom "streams" atau "track_name" tidak ditemukan pada DataFrame.')
+        st.write('Tidak ada data numerik yang valid untuk ditampilkan dalam plot.')
 
     # Button for Pie Chart Visualization
     if st.button('Show Pie Chart Visualizations'):
@@ -193,9 +189,6 @@ if uploaded_file is not None:
             plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
             plt.title('Released Day ' + str(i))
             st.pyplot(plt)
-
-    import matplotlib.pyplot as plt
-    import streamlit as st
 
     # Visualisasi di Streamlit
     st.write('### Jumlah Streaming per Bulan Rilis')

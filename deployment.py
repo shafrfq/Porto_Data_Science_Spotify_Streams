@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import PolynomialFeatures, MinMaxScaler
 from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Title and Description
 st.title('Spotify Song Popularity Prediction')
@@ -37,18 +37,11 @@ if uploaded_file is not None:
 
     # Outlier Detection
     st.write('### Outlier Detection with IQR')
-    # Select only numeric columns from df
     numeric_cols = df.select_dtypes(include=[float, int])
-
-    # Calculate the IQR (Interquartile Range)
     q1 = numeric_cols.quantile(0.25)
     q3 = numeric_cols.quantile(0.75)
     iqr = q3 - q1
-
-    # Apply the outlier filter to numeric columns only
     outlier_filter = (numeric_cols < (q1 - 1.5 * iqr)) | (numeric_cols > (q3 + 1.5 * iqr))
-
-    # Optionally, remove outliers from the dataframe
     df_filtered = df[~outlier_filter.any(axis=1)]
 
     # Boxplot for Outliers
@@ -65,12 +58,35 @@ if uploaded_file is not None:
     st.write(df.isnull().sum())
 
     if st.button('Handle Missing Values'):
-    # Hanya menerapkan pengisian missing values pada kolom numerik
         numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
         df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
-    
-    st.success('Missing values handled.')
-    st.dataframe(df.head())
+        st.success('Missing values handled.')
+        st.dataframe(df.head())
+
+    # Scaling
+    st.header('Data Scaling')
+    numerical_col = ['streams', 'bpm', 'danceability_%']  # Add more columns as necessary
+    scaler = MinMaxScaler()
+    minmax_df = scaler.fit_transform(df[numerical_col])
+    minmax_df = pd.DataFrame(minmax_df, columns=numerical_col)
+
+    # Plot Before and After Scaling
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    axes[0].set_title('Before Scaling')
+    sns.kdeplot(df[numerical_col[0]], ax=axes[0], color='r', label=f"Before Scaling: {numerical_col[0]}")
+    sns.kdeplot(df[numerical_col[1]], ax=axes[0], color='b', label=f"Before Scaling: {numerical_col[1]}")
+    axes[0].legend()
+
+    axes[1].set_title('After Min-Max Scaling')
+    sns.kdeplot(minmax_df[numerical_col[0]], ax=axes[1], color='black', label=f"After Scaling: {numerical_col[0]}")
+    sns.kdeplot(minmax_df[numerical_col[1]], ax=axes[1], color='blue', label=f"After Scaling: {numerical_col[1]}")
+    axes[1].legend()
+    axes[0].set_xlabel('Value')
+    axes[0].set_ylabel('Density')
+    axes[1].set_xlabel('Value')
+    axes[1].set_ylabel('Density')
+    plt.tight_layout()
+    st.pyplot(fig)
 
     # Feature and Target Selection for Model Training
     st.header('Train Machine Learning Models')
@@ -111,7 +127,6 @@ if uploaded_file is not None:
                 X_test_poly = poly.transform(X_test)
                 model = LinearRegression()
                 model.fit(X_train_poly, y_train)
-                y_pred_test = model.predict(X_test_poly)
             elif model_choice == 'Random Forest':
                 n_estimators = st.slider('n_estimators', 10, 100, step=10)
                 model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
@@ -139,8 +154,6 @@ if uploaded_file is not None:
 
     # Correlation Matrix
     st.write('### Correlation Matrix:')
-
-    # Hanya memilih kolom numerik untuk korelasi
     numeric_cols = df.select_dtypes(include=['float64', 'int64'])
 
     if not numeric_cols.empty:
@@ -149,40 +162,29 @@ if uploaded_file is not None:
         sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
         st.pyplot(plt)
     else:
-        st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
+        st.write('No numeric columns available for correlation calculation.')
 
-    # Mengambil data top_tracks
+    # Top Tracks Data
     top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
-
-    # Debugging: Menampilkan isi top_tracks di Streamlit
     st.write("Top Tracks DataFrame:", top_tracks)
 
-    # Memeriksa apakah top_tracks berisi data numerik
-    if not top_tracks.empty and top_tracks.apply(lambda x: pd.api.types.is_numeric_dtype(x)):
-        # Visualisasi di Streamlit
+    # Visualization of Top Tracks
+    if not top_tracks.empty and top_tracks.apply(lambda x: pd.api.types.is_numeric_dtype(x)).all():
         fig, ax = plt.subplots(figsize=(10, 6))
         top_tracks.plot(kind='bar', ax=ax)
-    
         ax.set_title('Top 10 Tracks by Streams')
         ax.set_ylabel('Total Streams')
         ax.set_xlabel('Track Names')
-        
         st.pyplot(fig)
     else:
-        st.write('Tidak ada data numerik yang valid untuk ditampilkan dalam plot.')
+        st.write('No valid numeric data to display in the plot.')
 
-    # Button for Pie Chart Visualization
+    # Pie Chart Visualization
     if st.button('Show Pie Chart Visualizations'):
-        # Grouping data by released_day
         delay_per_day = df.groupby('released_day')[['in_spotify_playlists', 'in_apple_playlists']].sum()
-
-        # Pie Chart Labels
         pieChartLabels = ['In Spotify Playlists', 'In Apple Playlists']
-
-        # Colors palette
         myColors = sns.color_palette('pastel')
 
-        # Pie Chart per day visualization
         for i in range(1, 8):
             b = delay_per_day.iloc[i-1, :]  # Data for that day
             plt.figure(figsize=(6, 6))
@@ -190,27 +192,15 @@ if uploaded_file is not None:
             plt.title('Released Day ' + str(i))
             st.pyplot(plt)
 
-    # Visualisasi di Streamlit
+    # Monthly Streams Visualization
     st.write('### Jumlah Streaming per Bulan Rilis')
-
-    # Mengatur ukuran gambar
     fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Melakukan plot data jumlah streaming per bulan
     monthly_streams = df.groupby('released_month')['streams'].sum().reset_index()
-    monthly_streams.set_index('released_month', inplace=True)  # Menjadikan 'released_month' sebagai index
+    monthly_streams.set_index('released_month', inplace=True)
     monthly_streams.plot(ax=ax)
-
-    # Mengatur label sumbu x
-    ticks = range(0, len(monthly_streams), 1)   # Menentukan posisi label setiap bulan
-    labels = monthly_streams.index[ticks]  # Mengambil label berdasarkan posisi
-    ax.set_xticks(ticks)  # Mengatur posisi label pada sumbu x
-    ax.set_xticklabels(labels, rotation=90)  # Mengatur posisi dan rotasi label 90 derajat pada sumbu x
-
-    # Mengatur label sumbu x, y dan judul grafik
-    ax.set_xlabel('Bulan Rilis')
-    ax.set_ylabel('Jumlah Streaming')
-    ax.set_title('Jumlah Streaming per Bulan Rilis')
-
-    # Menampilkan grafik di Streamlit
+    ticks = range(0, len(monthly_streams), 1)
+    plt.xticks(ticks, monthly_streams.index, rotation=45)
+    plt.title('Monthly Streams')
+    plt.xlabel('Released Month')
+    plt.ylabel('Total Streams')
     st.pyplot(fig)

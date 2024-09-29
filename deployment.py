@@ -125,9 +125,13 @@ if uploaded_file is not None:
     indeks_hapus = df.sample(n=jumlah_hapus).index
     df.loc[indeks_hapus, 'in_shazam_charts'] = None
 
-    # Step 2: Impute missing data using SimpleImputer with 'most_frequent' strategy
-    mode_imputer = SimpleImputer(strategy="most_frequent")
-    df['in_shazam_charts'] = mode_imputer.fit_transform(df[['in_shazam_charts']])
+    # Step 2: Calculate the percentage of missing data
+    missing_percentage_deezer = (df['in_shazam_charts'].isnull().sum() / df.shape[0]) * 100
+    st.write(f"Percentage of missing data in 'in_shazam_charts': {missing_percentage_deezer:.2f}%")
+
+    # Step 3: Impute missing data with the mean
+    mean_deezer = df['in_shazam_charts'].mean()
+    df['in_shazam_charts'].fillna(mean_deezer, inplace=True)
 
     # Display the imputed DataFrame
     st.write("DataFrame after imputing missing values in 'in_shazam_charts':", df.head())

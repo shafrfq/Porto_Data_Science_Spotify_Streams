@@ -63,30 +63,36 @@ if uploaded_file is not None:
         st.success('Missing values handled.')
         st.dataframe(df.head())
 
-    # Scaling
+    # Data Scaling
     st.header('Data Scaling')
-    numerical_col = ['streams', 'bpm', 'danceability_%']  # Add more columns as necessary
-    scaler = MinMaxScaler()
-    minmax_df = scaler.fit_transform(df[numerical_col])
-    minmax_df = pd.DataFrame(minmax_df, columns=numerical_col)
+    numerical_col = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
 
-    # Plot Before and After Scaling
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-    axes[0].set_title('Before Scaling')
-    sns.kdeplot(df[numerical_col[0]], ax=axes[0], color='r', label=f"Before Scaling: {numerical_col[0]}")
-    sns.kdeplot(df[numerical_col[1]], ax=axes[0], color='b', label=f"Before Scaling: {numerical_col[1]}")
-    axes[0].legend()
+    if numerical_col:
+        scaler = MinMaxScaler()
+    
+        # Handle missing values
+        df[numerical_col] = df[numerical_col].fillna(df[numerical_col].mean())
+    
+        # Fit and transform the data
+        minmax_df = scaler.fit_transform(df[numerical_col])
+        minmax_df = pd.DataFrame(minmax_df, columns=numerical_col)
 
-    axes[1].set_title('After Min-Max Scaling')
-    sns.kdeplot(minmax_df[numerical_col[0]], ax=axes[1], color='black', label=f"After Scaling: {numerical_col[0]}")
-    sns.kdeplot(minmax_df[numerical_col[1]], ax=axes[1], color='blue', label=f"After Scaling: {numerical_col[1]}")
-    axes[1].legend()
-    axes[0].set_xlabel('Value')
-    axes[0].set_ylabel('Density')
-    axes[1].set_xlabel('Value')
-    axes[1].set_ylabel('Density')
-    plt.tight_layout()
-    st.pyplot(fig)
+        # Plot Before and After Scaling
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+        axes[0].set_title('Before Scaling')
+        for col in numerical_col:
+            sns.kdeplot(df[col], ax=axes[0], label=f"Before Scaling: {col}")
+        axes[0].legend()
+
+        axes[1].set_title('After Min-Max Scaling')
+        for col in numerical_col:
+            sns.kdeplot(minmax_df[col], ax=axes[1], label=f"After Scaling: {col}")
+        axes[1].legend()
+        plt.tight_layout()
+        st.pyplot(fig)
+    else:
+        st.warning('No numeric columns available for scaling.')
+
 
     # Feature and Target Selection for Model Training
     st.header('Train Machine Learning Models')

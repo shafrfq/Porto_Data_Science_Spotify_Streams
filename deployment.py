@@ -197,16 +197,20 @@ if uploaded_file is not None:
             plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
             plt.title('Released Day ' + str(i))
             st.pyplot(plt)
+    
+    # Assuming df is your DataFrame with a 'streams' column and 'released_year' as the release date
+    df['release_date'] = pd.to_datetime(df['released_year'])  # Convert to datetime if not already
+    monthly_streams = df.groupby(df['release_date'].dt.to_period('M'))['streams'].sum()
 
-    # Monthly Streams Visualization
-    st.write('### Jumlah Streaming per Bulan Rilis')
-    fig, ax = plt.subplots(figsize=(10, 6))
-    monthly_streams = df.groupby('released_month')['streams'].sum().reset_index()
-    monthly_streams.set_index('released_month', inplace=True)
-    monthly_streams.plot(ax=ax)
-    ticks = range(0, len(monthly_streams), 1)
-    plt.xticks(ticks, monthly_streams.index, rotation=45)
-    plt.title('Monthly Streams')
-    plt.xlabel('Released Month')
-    plt.ylabel('Total Streams')
-    st.pyplot(fig)
+    # Check the data before plotting
+    st.write(monthly_streams)
+
+    if not monthly_streams.empty and monthly_streams.dtype in ['int64', 'float64']:
+        fig, ax = plt.subplots()
+        monthly_streams.plot(kind='bar', ax=ax)
+        ax.set_title('Jumlah Streaming per Bulan Rilis')
+        ax.set_xlabel('Bulan Rilis')
+        ax.set_ylabel('Jumlah Streaming')
+        st.pyplot(fig)
+    else:
+        st.warning('No numeric data to plot or the DataFrame is empty.')

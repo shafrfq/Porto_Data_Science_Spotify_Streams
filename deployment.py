@@ -72,63 +72,15 @@ if uploaded_file is not None:
     st.success('Missing values handled.')
     st.dataframe(df.head())
 
-    # Correlation Matrix
-    st.write('### Correlation Matrix:')
+    # Feature and Target Selection for Model Training
+    st.header('Train Machine Learning Models')
+    features = df.columns.tolist()
+    X_columns = st.multiselect('Select Features (X)', features)
+    y_column = st.selectbox('Select Target (y)', features)
 
-    # Hanya memilih kolom numerik untuk korelasi
-    numeric_cols = df.select_dtypes(include=['float64', 'int64'])
-
-    if not numeric_cols.empty:
-        correlation_matrix = numeric_cols.corr()
-        plt.figure(figsize=(10, 6))
-        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
-        st.pyplot(plt)
-    else:
-        st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
-
-    # Top Tracks and Artists Visualization
-    st.write('### Top Streaming Tracks and Artists:')
-    # Misalnya, kita ingin memilih beberapa lagu teratas berdasarkan metrik tertentu
-    top_tracks = df.head(10)  # Misalnya, ambil 10 lagu teratas
-
-    # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
-    if not top_tracks.select_dtypes(include=['float64', 'int64']).empty:
-        top_tracks.select_dtypes(include=['float64', 'int64']).plot(kind='bar', figsize=(10, 6))
-        plt.title('Top Tracks Bar Plot')
-        plt.ylabel('Value')  # Sesuaikan label sesuai data
-        plt.xlabel('Track Names')  # Sesuaikan label sesuai data
-        st.pyplot(plt)
-    else:
-        st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
-    
-    # Button for Pie Chart Visualization
-    if st.button('Show Pie Chart Visualizations'):
-        # Grouping data by released_day
-        delay_per_day = df.groupby('released_day')[['in_spotify_playlists', 'in_apple_playlists']].sum()
-
-        # Pie Chart Labels
-        pieChartLabels = ['In Spotify Playlists', 'In Apple Playlists']
-
-        # Colors palette
-        myColors = sns.color_palette('pastel')
-
-        # Pie Chart per day visualization
-        for i in range(1, 8):
-            b = delay_per_day.iloc[i-1, :]  # Data for that day
-            plt.figure(figsize=(6, 6))
-            plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
-            plt.title('Released Day ' + str(i))
-            st.pyplot(plt)
-            
-        # Feature and Target Selection for Model Training
-        st.header('Train Machine Learning Models')
-        features = df.columns.tolist()
-        X_columns = st.multiselect('Select Features (X)', features)
-        y_column = st.selectbox('Select Target (y)', features)
-
-        if len(X_columns) > 0 and y_column:
-            X = df[X_columns]
-            y = df[y_column]
+    if len(X_columns) > 0 and y_column:
+        X = df[X_columns]
+        y = df[y_column]
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -184,3 +136,88 @@ if uploaded_file is not None:
             plt.xlabel('Actual')
             plt.ylabel('Predicted')
             st.pyplot(plt)
+
+    # Correlation Matrix
+    st.write('### Correlation Matrix:')
+
+    # Hanya memilih kolom numerik untuk korelasi
+    numeric_cols = df.select_dtypes(include=['float64', 'int64'])
+
+    if not numeric_cols.empty:
+        correlation_matrix = numeric_cols.corr()
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+        st.pyplot(plt)
+    else:
+        st.write('Tidak ada kolom numerik yang tersedia untuk menghitung korelasi.')
+
+    # Top Tracks and Artists Visualization
+    st.write('### Top Streaming Tracks and Artists:')
+
+    # Periksa apakah kolom 'streams' dan 'track_name' ada di DataFrame
+    if 'streams' in df.columns and 'track_name' in df.columns:
+    # Hitung 10 besar track berdasarkan total streams
+        top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
+    
+    # Tampilkan data 10 besar track
+        st.write(top_tracks)
+    
+    # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
+        if not top_tracks.empty:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            top_tracks.plot(kind='bar', ax=ax)
+            ax.set_title('Top 10 Tracks by Streams')
+            ax.set_ylabel('Total Streams')
+            ax.set_xlabel('Track Names')
+            st.pyplot(fig)
+        else:
+            st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
+    else:
+        st.write('Kolom "streams" atau "track_name" tidak ditemukan pada DataFrame.')
+
+    # Button for Pie Chart Visualization
+    if st.button('Show Pie Chart Visualizations'):
+        # Grouping data by released_day
+        delay_per_day = df.groupby('released_day')[['in_spotify_playlists', 'in_apple_playlists']].sum()
+
+        # Pie Chart Labels
+        pieChartLabels = ['In Spotify Playlists', 'In Apple Playlists']
+
+        # Colors palette
+        myColors = sns.color_palette('pastel')
+
+        # Pie Chart per day visualization
+        for i in range(1, 8):
+            b = delay_per_day.iloc[i-1, :]  # Data for that day
+            plt.figure(figsize=(6, 6))
+            plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
+            plt.title('Released Day ' + str(i))
+            st.pyplot(plt)
+
+    import matplotlib.pyplot as plt
+    import streamlit as st
+
+    # Visualisasi di Streamlit
+    st.write('### Jumlah Streaming per Bulan Rilis')
+
+    # Mengatur ukuran gambar
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Melakukan plot data jumlah streaming per bulan
+    monthly_streams = df.groupby('released_month')['streams'].sum().reset_index()
+    monthly_streams.set_index('released_month', inplace=True)  # Menjadikan 'released_month' sebagai index
+    monthly_streams.plot(ax=ax)
+
+    # Mengatur label sumbu x
+    ticks = range(0, len(monthly_streams), 1)   # Menentukan posisi label setiap bulan
+    labels = monthly_streams.index[ticks]  # Mengambil label berdasarkan posisi
+    ax.set_xticks(ticks)  # Mengatur posisi label pada sumbu x
+    ax.set_xticklabels(labels, rotation=90)  # Mengatur posisi dan rotasi label 90 derajat pada sumbu x
+
+    # Mengatur label sumbu x, y dan judul grafik
+    ax.set_xlabel('Bulan Rilis')
+    ax.set_ylabel('Jumlah Streaming')
+    ax.set_title('Jumlah Streaming per Bulan Rilis')
+
+    # Menampilkan grafik di Streamlit
+    st.pyplot(fig)

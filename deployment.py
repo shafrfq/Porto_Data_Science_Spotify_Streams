@@ -153,14 +153,15 @@ if uploaded_file is not None:
 
     # Top Tracks and Artists Visualization
     st.write('### Top Streaming Tracks and Artists:')
-    if 'streams' in df.columns and 'track_name' in df.columns:
-        top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
-        st.write(top_tracks)
-
-        top_tracks.plot(kind='bar', figsize=(10, 6))
-        plt.title('Top 10 Tracks by Streams')
-        plt.ylabel('Total Streams')
+    # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
+    if not top_tracks.select_dtypes(include=['float64', 'int64']).empty:
+        top_tracks.select_dtypes(include=['float64', 'int64']).plot(kind='bar', figsize=(10, 6))
+        plt.title('Top Tracks Bar Plot')
+        plt.ylabel('Value')  # Sesuaikan label sesuai data
+        plt.xlabel('Track Names')  # Sesuaikan label sesuai data
         st.pyplot(plt)
+    else:
+        st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
 
     # Button for Pie Chart Visualization
     if st.button('Show Pie Chart Visualizations'):

@@ -153,6 +153,9 @@ if uploaded_file is not None:
 
     # Top Tracks and Artists Visualization
     st.write('### Top Streaming Tracks and Artists:')
+    # Misalnya, kita ingin memilih beberapa lagu teratas berdasarkan metrik tertentu
+    top_tracks = df.head(10)  # Misalnya, ambil 10 lagu teratas
+
     # Pastikan 'top_tracks' memiliki data numerik sebelum plotting
     if not top_tracks.select_dtypes(include=['float64', 'int64']).empty:
         top_tracks.select_dtypes(include=['float64', 'int64']).plot(kind='bar', figsize=(10, 6))
@@ -162,7 +165,7 @@ if uploaded_file is not None:
         st.pyplot(plt)
     else:
         st.write('Tidak ada data numerik untuk ditampilkan dalam plot.')
-
+    
     # Button for Pie Chart Visualization
     if st.button('Show Pie Chart Visualizations'):
         # Grouping data by released_day

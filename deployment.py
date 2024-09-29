@@ -151,3 +151,22 @@ if uploaded_file is not None:
         plt.title('Top 10 Tracks by Streams')
         plt.ylabel('Total Streams')
         st.pyplot(plt)
+
+    # Button for Pie Chart Visualization
+    if st.button('Show Pie Chart Visualizations'):
+        # Grouping data by released_day
+        delay_per_day = df.groupby('released_day')[['in_spotify_playlists', 'in_apple_playlists']].sum()
+
+        # Pie Chart Labels
+        pieChartLabels = ['In Spotify Playlists', 'In Apple Playlists']
+
+        # Colors palette
+        myColors = sns.color_palette('pastel')
+
+        # Pie Chart per day visualization
+        for i in range(1, 8):
+            b = delay_per_day.iloc[i-1, :]  # Data for that day
+            plt.figure(figsize=(6, 6))
+            plt.pie(b, labels=pieChartLabels, colors=myColors, autopct='%.0f%%')
+            plt.title('Released Day ' + str(i))
+            st.pyplot(plt)

@@ -1,54 +1,69 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Title and Description
 st.title('Spotify Song Popularity Prediction')
-st.write('Menganalisis faktor-faktor yang mempengaruhi popularitas lagu di Spotify dan memprediksi jumlah streaming lagu menggunakan model Machine Learning.')
+st.write('This app analyzes factors influencing song popularity on Spotify and predicts song streams using machine learning models.')
 
-# Load Data
+# Upload Data
 st.header('Upload Dataset')
 uploaded_file = st.file_uploader('Choose a CSV file', type='csv')
+
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
-    
+
     # Data Understanding
-    st.write('Data Understanding')
-    st.write('Data Preview:')
+    st.write('## Data Understanding')
     st.dataframe(df.head())
-    
-    st.write('Ringkasan Statistik')
+
+    st.write('## Summary Statistics')
     st.write(df.describe())
 
-    st.write('Data Distribution Plots')
+    # Data Distribution Plots
+    st.write('## Data Distribution Plots')
     for column in df.select_dtypes(include=['float64', 'int64']).columns:
         plt.figure(figsize=(10, 4))
         sns.histplot(df[column], bins=30, kde=True)
         plt.title(f'Distribution of {column}')
         st.pyplot(plt)
 
-    # Data Preparation
+    # Outlier Detection
+    st.write('### Outlier Detection with IQR')
+    q1 = df.select_dtypes(exclude=['object']).quantile(0.25)
+    q3 = df.select_dtypes(exclude=['object']).quantile(0.75)
+    iqr = q3 - q1
+    outlier_filter = (df < (q1 - 1.5 * iqr)) | (df > (q3 + 1.5 * iqr))
+    st.write('Jumlah outliers pada setiap kolom:')
+    st.write(outlier_filter.sum())
+
+    # Boxplot for Outliers
+    st.write('### Boxplot for Outliers')
+    for column in df.select_dtypes(include=['float64', 'int64']).columns:
+        plt.figure(figsize=(10, 2))
+        sns.boxplot(x=df[column])
+        plt.title(f'Boxplot of {column}')
+        st.pyplot(plt)
+
+    # Data Preparation: Handling Missing Values
     st.header('Data Preparation')
-    st.write('Memeriksa missing values:')
+    st.write('Checking for missing values:')
     st.write(df.isnull().sum())
-    
-    if st.button('Menangani Missing Values'):
-        # Example: Fill missing values with mean (you can adjust this)
+
+    if st.button('Handle Missing Values'):
         df.fillna(df.mean(), inplace=True)
-        st.success('Missing values ditangani.')
+        st.success('Missing values handled.')
+        st.dataframe(df.head())
 
-    st.write('Preview Data yang Sudah Dibersihkan:')
-    st.dataframe(df.head())
-
-    # Splitting data into train and test sets
-    st.header('Latih Model Machine Learning')
-    st.write('Pilih fitur dan target untuk pelatihan model:')
+    # Feature and Target Selection for Model Training
+    st.header('Train Machine Learning Models')
     features = df.columns.tolist()
     X_columns = st.multiselect('Select Features (X)', features)
     y_column = st.selectbox('Select Target (y)', features)
@@ -57,44 +72,75 @@ if uploaded_file is not None:
         X = df[X_columns]
         y = df[y_column]
 
-        # Split the data
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # Model selection
-        model_choice = st.selectbox('Pilih Model', ['Linear Regression', 'Polynomial Regression', 'Random Forest'])
+        model_choice = st.selectbox('Choose a Model', ['Linear Regression', 'Polynomial Regression', 'Random Forest'])
 
-        # Model training
-        if st.button('Latih Model'):
+        # Model evaluation function
+        def evaluate_model(model, X_train, X_test, y_train, y_test):
+            y_pred_train = model.predict(X_train)
+            y_pred_test = model.predict(X_test)
+            mse_train = mean_squared_error(y_train, y_pred_train)
+            mse_test = mean_squared_error(y_test, y_pred_test)
+            rmse_train = np.sqrt(mse_train)
+            rmse_test = np.sqrt(mse_test)
+            r2_train = r2_score(y_train, y_pred_train)
+            r2_test = r2_score(y_test, y_pred_test)
+            return mse_train, rmse_train, r2_train, mse_test, rmse_test, r2_test
+
+        # Model training and evaluation
+        if st.button('Train Model'):
             if model_choice == 'Linear Regression':
                 model = LinearRegression()
                 model.fit(X_train, y_train)
             elif model_choice == 'Polynomial Regression':
-                degree = st.slider('Polynomial Degree', 2, 5)
+                degree = st.slider('Choose Polynomial Degree', 2, 5)
                 poly = PolynomialFeatures(degree=degree)
-                X_poly_train = poly.fit_transform(X_train)
+                X_train_poly = poly.fit_transform(X_train)
+                X_test_poly = poly.transform(X_test)
                 model = LinearRegression()
-                model.fit(X_poly_train, y_train)
-                X_poly_test = poly.transform(X_test)
+                model.fit(X_train_poly, y_train)
+                y_pred_test = model.predict(X_test_poly)
             elif model_choice == 'Random Forest':
-                model = RandomForestRegressor(n_estimators=100, random_state=42)
+                n_estimators = st.slider('n_estimators', 10, 100, step=10)
+                model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
                 model.fit(X_train, y_train)
 
-            # Predictions and performance metrics
+            # Predictions and evaluation
             if model_choice == 'Polynomial Regression':
-                y_pred = model.predict(X_poly_test)
+                y_pred_test = model.predict(X_test_poly)
             else:
-                y_pred = model.predict(X_test)
+                y_pred_test = model.predict(X_test)
 
-            mse = mean_squared_error(y_test, y_pred)
-            r2 = r2_score(y_test, y_pred)
+            mse_test = mean_squared_error(y_test, y_pred_test)
+            r2_test = r2_score(y_test, y_pred_test)
 
-            st.write(f'Mean Squared Error: {mse}')
-            st.write(f'R-squared: {r2}')
+            st.write(f'Mean Squared Error: {mse_test}')
+            st.write(f'R-squared: {r2_test}')
 
-            # Actual vs Predicted Plot
+            # Actual vs Predicted plot
             plt.figure(figsize=(10, 6))
-            plt.scatter(y_test, y_pred, alpha=0.5)
+            plt.scatter(y_test, y_pred_test, alpha=0.5)
             plt.title('Actual vs Predicted')
             plt.xlabel('Actual')
             plt.ylabel('Predicted')
             st.pyplot(plt)
+
+    # Correlation Matrix
+    st.write('### Correlation Matrix:')
+    correlation_matrix = df.corr()
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+    st.pyplot(plt)
+
+    # Top Tracks and Artists Visualization
+    st.write('### Top Streaming Tracks and Artists:')
+    if 'streams' in df.columns and 'track_name' in df.columns:
+        top_tracks = df.groupby('track_name')['streams'].sum().sort_values(ascending=False).head(10)
+        st.write(top_tracks)
+
+        top_tracks.plot(kind='bar', figsize=(10, 6))
+        plt.title('Top 10 Tracks by Streams')
+        plt.ylabel('Total Streams')
+        st.pyplot(plt)
